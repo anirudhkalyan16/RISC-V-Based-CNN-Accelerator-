@@ -1,1 +1,1 @@
-# RISC-V-Based-CNN-Accelerator-
+# RISC-V-Based-CNN-Accelerator
