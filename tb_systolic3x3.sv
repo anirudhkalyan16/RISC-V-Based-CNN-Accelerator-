@@ -1,73 +1,66 @@
 module test;
 
+logic clk;
+logic reset;
 
- reg clk;
- reg reset;
- reg [7:0] a1;
- reg [7:0] a2;
- reg [7:0] a3;
- reg [7:0] b1;
- reg [7:0] b2;
- reg [7:0] b3;
+logic [7:0] p1,p2,p3,p4,p5,p6,p7,p8,p9;
 
+logic signed [7:0] w1,w2,w3,w4,w5,w6,w7,w8,w9;
 
- wire [16:0] c1;
- wire [16:0] c2;
- wire [16:0] c3;
- wire [16:0] c4;
- wire [16:0] c5;
- wire [16:0] c6;
- wire [16:0] c7;
- wire [16:0] c8;
- wire [16:0] c9;
-
- top uut (
-  .clk(clk), 
-  .reset(reset), 
-  .a1(a1), 
-  .a2(a2), 
-  .a3(a3), 
-  .b1(b1), 
-  .b2(b2), 
-  .b3(b3), 
-  .c1(c1), 
-  .c2(c2), 
-  .c3(c3), 
-  .c4(c4), 
-  .c5(c5), 
-  .c6(c6), 
-  .c7(c7), 
-  .c8(c8), 
-  .c9(c9)
- );
-
- initial begin
-
-  clk = 0;
-  reset = 0;
-  a1 = 0;
-  a2 = 0;
-  a3 = 0;
-  b1 = 0;
-  b2 = 0;
-  b3 = 0;
+logic signed [31:0] sum;
 
 
-  #5 reset = 1;
-  #5 reset = 0;
-  #5;  a1 = 1; a2 = 0; a3 = 0; b1 = 2; b2 = 0; b3 = 0;
-  #10; a1 = 2; a2 = 4; a3 = 0; b1 = 4; b2 = 1; b3 = 0;
-  #10; a1 = 3; a2 = 5; a3 = 7; b1 = 6; b2 = 5; b3 = 3;
-  #10; a1 = 0; a2 = 6; a3 = 8; b1 = 0; b2 = 9; b3 = 7;
-  #10; a1 = 0; a2 = 0; a3 = 9; b1 = 0; b2 = 0; b3 = 8;
-  #10; a1 = 0; a2 = 0; a3 = 0; b1 = 0; b2 = 0; b3 = 0;
-  #100;
-  $stop;
+top dut (
+    .clk(clk),
+    .reset(reset),
 
- end
- 
- initial begin
-  forever #5 clk = ~clk;
- end
-      
+    .p1(p1), .p2(p2), .p3(p3),
+    .p4(p4), .p5(p5), .p6(p6),
+    .p7(p7), .p8(p8), .p9(p9),
+
+    .w1(w1), .w2(w2), .w3(w3),
+    .w4(w4), .w5(w5), .w6(w6),
+    .w7(w7), .w8(w8), .w9(w9),
+
+    .sum(sum)
+);
+
+
+initial begin
+    clk = 0;
+    forever #5 clk = ~clk;
+end
+
+initial begin
+
+    reset = 1;
+
+    p1 = 8'd1;  p2 = 8'd2;  p3 = 8'd3;
+    p4 = 8'd4;  p5 = 8'd5;  p6 = 8'd6;
+    p7 = 8'd7;  p8 = 8'd8;  p9 = 8'd9;
+
+    w1 = 8'sd1; w2 = 8'sd1; w3 = 8'sd1;
+    w4 = 8'sd1; w5 = 8'sd1; w6 = 8'sd1;
+    w7 = 8'sd1; w8 = 8'sd1; w9 = 8'sd1;
+
+    // Hold reset for 2 clocks
+    repeat(2) @(posedge clk);
+
+    reset = 0;
+
+
+    repeat(5) begin
+        @(posedge clk);
+        $display("Time = %0t   Sum = %0d", $time, sum);
+    end
+
+    if(sum == 32'sd45)
+        $display("PASS");
+    else
+        $display("FAIL");
+
+    $stop;
+
+end
+
 endmodule

@@ -5,18 +5,22 @@ module accelerator_fsm (
     output logic done
 );
 
-    logic [2:0] state;
-    localparam IDLE = 3'd0;
-    localparam COMPUTE = 3'd1;
-    localparam STORE = 3'd2;
-    localparam NEXT = 3'd3;
-    localparam POOL = 3'd4;
-    localparam DONE = 3'd5;
+    logic [3:0] state;
+    localparam IDLE = 4'd0;
+    localparam CLEAR = 4'd1;
+    localparam COMPUTE1 = 4'd2;
+    localparam COMPUTE2 = 4'd3;
+    localparam COMPUTE3=4'd4;
+    localparam STORE = 4'd5;
+    localparam NEXT = 4'd6;
+    localparam POOL = 4'd7;
+    localparam DONE = 4'd8;
     logic [2:0] row, col;
     logic [5:0] out_index;
     logic [2:0] pool_row, pool_col;
     logic [3:0] pool_index;
     logic [5:0] base;
+    logic clear;
     logic signed [31:0] sum;
     logic signed [31:0] output_mem [0:35];
     logic signed [31:0] pool_mem [0:8];
@@ -29,6 +33,7 @@ module accelerator_fsm (
     assign w1 = -8'sd1; assign w2 =  8'sd0; assign w3 =  8'sd1;
     assign w4 = -8'sd2; assign w5 =  8'sd0; assign w6 =  8'sd2;
     assign w7 = -8'sd1; assign w8 =  8'sd0; assign w9 =  8'sd1;
+
     top_convol datapath (
         .row(row),
         .col(col),
@@ -37,19 +42,25 @@ module accelerator_fsm (
         .w7(w7), .w8(w8), .w9(w9),
         .clk(clk),
         .rst(rst),
+        .clear(clear),
         .sum(sum)
     );
     always_comb begin
         base = pool_row * 6 + pool_col;
-
         A = output_mem[base];
         B = output_mem[base + 1];
         C = output_mem[base + 6];
         D = output_mem[base + 7];
-
         max1 = (A > B) ? A : B;
         max2 = (C > D) ? C : D;
         pool_max = (max1 > max2) ? max1 : max2;
+    end
+
+    always_comb begin
+        if (state == CLEAR)
+            clear = 1'b1;
+        else
+            clear = 1'b0;
     end
     always_ff @(posedge clk or posedge rst) begin
         if (rst) begin
@@ -78,11 +89,20 @@ module accelerator_fsm (
                     done <= 1'b0;
 
                     if (start)
-                        state <= COMPUTE;
+                        state <= CLEAR;
                     else
                         state <= IDLE;
                 end
-                COMPUTE: begin
+                CLEAR: begin
+                    state<= COMPUTE1;
+                end
+                COMPUTE1: begin
+                    state <= COMPUTE2;
+                end
+                COMPUTE2: begin
+                    state <= COMPUTE3;
+                end
+                COMPUTE3: begin
                     state <= STORE;
                 end
                 STORE: begin
@@ -107,7 +127,7 @@ module accelerator_fsm (
                         else begin
                             col <= col + 1;
                         end
-                        state <= COMPUTE;
+                        state <= CLEAR;
                     end
                 end
                 POOL: begin
